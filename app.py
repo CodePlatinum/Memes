@@ -3,7 +3,6 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from telebot import types
 import time
-from flask import Flask
 
 BOT_TOKEN = '7666674896:AAHKXKmag-XlJMOM4iPKZsIHJDZDwTgO4VY'
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -11,10 +10,6 @@ bot = telebot.TeleBot(BOT_TOKEN)
 TEMPLATE_FOLDER = 'templates'
 user_data = {}
 
-# Создаём Flask-приложение
-app = Flask(__name__)
-
-# Хендлеры сообщений
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     keyboard = types.InlineKeyboardMarkup()
@@ -54,10 +49,11 @@ def generate_meme(message):
         # 📐 Автоматическая настройка размера шрифта под изображение
         font_percent = 0.06 if width > 800 else 0.08
 
-        def get_font():
-            return ImageFont.truetype('/Library/Fonts/Arial.ttf', int(min(width, height) * font_percent))
-
-        font = get_font()
+        # Используем стандартный шрифт (работает на всех системах)
+        try:
+            font = ImageFont.truetype('fonts/Arial.ttf', int(min(width, height) * font_percent))  # Укажите правильный путь
+        except IOError:
+            font = ImageFont.load_default()  # Стандартный шрифт, если не удалось загрузить Arial
 
         def draw_text(text, y, shift_x=0, shift_y=0):
             text = text.upper().strip()
@@ -88,7 +84,7 @@ def generate_meme(message):
     except Exception as e:
         bot.reply_to(message, f"Ошибка при создании мема: {e}")
 
-# Запуск Flask-сервера и polling с использованием long polling
+# Запуск бота
 def start_polling():
     print("Бот запущен. Ожидаем сообщений...")
     while True:
@@ -100,10 +96,4 @@ def start_polling():
             time.sleep(15)
 
 if __name__ == '__main__':
-    # Запуск Flask-приложения (оно не будет активно с точки зрения обработки сообщений)
-    from threading import Thread
-    thread = Thread(target=start_polling)
-    thread.start()
-
-    # Запуск Flask-сервера на другом порту (например, для мониторинга или API)
-    app.run(host="0.0.0.0", port=5000)
+    start_polling()
